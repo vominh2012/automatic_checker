@@ -1,0 +1,1 @@
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --pack-extension=AutomaticChecker --pack-extension-key=key.pem

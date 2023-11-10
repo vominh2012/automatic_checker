@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <title>Automatic Checker</title>
+
+    <style>
+      body {
+        font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
+        font-size: 100%;
+      }
+
+      button.check_button {
+        width: 150px;
+        height: 25px;
+        margin: 3px;
+      }
+
+      input#txt_step {
+        width: 150px;
+      }
+	  
+	  input#txt_from {
+        width: 150px;
+      }
+	  
+	  input#txt_to {
+        width: 150px;
+      }
+    </style>
+
+    <!--
+      - JavaScript and HTML must be in separate files: see our Content Security
+      - Policy documentation[1] for details and explanation.
+      -
+      - [1]: https://developer.chrome.com/extensions/contentSecurityPolicy
+     -->
+    <script src="popup.js"></script>
+  </head>
+  <body>
+    <button id="btn_check_all" class="check_button">Check All</button>
+    <button id="btn_uncheck_all" class="check_button">Uncheck All</button>
+    <button id="btn_invert" class="check_button">Invert</button>
+    <div> Type: </div>
+    <div> <input id="chk_checkbox" type="checkbox"/> Checkbox </div>
+    <div> <input id="chk_radio" type="checkbox"/> Radio </div>
+    Step: <input id="txt_step" type="number" value=1> 
+	From: <input id="txt_from" type="number" value=0>
+	To: <input id="txt_to" type="number" value=99999>
+  </body>
+</html>
+
