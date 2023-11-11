@@ -6,17 +6,27 @@
 var Commander = {
   sendCommandToActiveTab : function(req) {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, req, function(response) {
-        //console.log(response.result);
-      });
+	  var tab = tabs[0];
+	  if (tab) {
+		if (tab.url && tab.url.startsWith('chrome://')) return 0;
+		chrome.tabs.sendMessage(tab.id, req);
+	  }
+
     });
   }
 };
 
-
 function getElementById(id)
 {
   return document.getElementById(id);
+}
+
+function add_change_event_listener(el, callback)
+{
+	el.addEventListener("change", callback);
+	el.addEventListener("keypress", callback);
+	el.addEventListener("paste", callback);
+	el.addEventListener("input", callback);
 }
 
 var PopupView = function() {
@@ -25,25 +35,33 @@ var PopupView = function() {
 
 PopupView.prototype.initialize = function() {
   // initialze controls
+  var _this = this;
   this.txtStep = getElementById("txt_step");
   this.txtFrom = getElementById("txt_from");
   this.txtTo = getElementById("txt_to");
   this.btnCheckAll = getElementById("btn_check_all");
   this.chkCheckbox = getElementById("chk_checkbox");
   this.chkRadio = getElementById("chk_radio");
-
-  var _this = this;
-  this.btnCheckAll.addEventListener("click", function() { 
+  this.cboMethod = getElementById("cbo_method");
+  
+  add_change_event_listener(this.txtStep, function() {_this.save_settings()});
+  add_change_event_listener(this.txtFrom, function() {_this.save_settings()});
+  add_change_event_listener(this.txtTo, function() {_this.save_settings()});
+  add_change_event_listener(this.chkCheckbox, function() {_this.save_settings()});
+  add_change_event_listener(this.chkRadio, function() {_this.save_settings()});
+  add_change_event_listener(this.cboMethod, function() {_this.save_settings()});
+  
+  _this.btnCheckAll.addEventListener("click", function() { 
     _this.checkAll();
   });
 
-  this.btnUncheckAll = getElementById('btn_uncheck_all');
-  this.btnUncheckAll.addEventListener("click", function() { 
+  _this.btnUncheckAll = getElementById('btn_uncheck_all');
+  _this.btnUncheckAll.addEventListener("click", function() { 
     _this.uncheckAll();
   });
 
-  this.btnInvert = getElementById('btn_invert');
-  this.btnInvert.addEventListener("click", function() {
+  _this.btnInvert = getElementById('btn_invert');
+  _this.btnInvert.addEventListener("click", function() {
     _this.invert();
   });
 }
@@ -71,11 +89,22 @@ const TypeSelected = {
 	TYPE_RADIO : 2
 };
 
-const Action = {
+const ButtonAction = {
 	ACTION_CHECK : 1,
 	ACTION_UNCHECK : 2,
 	ACTION_INVERT : 4,
 };
+
+PopupView.prototype.get_ui_input_types = function() {
+  var input_types = 0;
+  if (this.chkCheckbox.checked) {
+	  input_types |= TypeSelected.TYPE_CHECKBOX;
+  }
+  if (this.chkRadio.checked) {
+	  input_types |= TypeSelected.TYPE_RADIO;
+  }
+  return input_types;
+}
 
 PopupView.prototype.doAction = function(action)
 {
@@ -83,46 +112,34 @@ PopupView.prototype.doAction = function(action)
   var from = this.txtFrom.valueAsNumber;
   var to = this.txtTo.valueAsNumber;
   
-  var input_types = 0;
-  if (this.chkCheckbox.checked) {
-	  input_types |= TypeSelected.TYPE_CHECKBOX;
-  }
-  if (this.chkRadio.checked) {
-	  input_types |= TypeSelected.TYPE_RADIO;
-  }
+  var input_types = this.get_ui_input_types();
+  var method = this.cboMethod.value;
   
-  var user_options = { action : action,input_types : input_types, step : step, from : from, to : to };
+  var user_options = { 'action' : action, 'input_types' : input_types, 'step' : step, 'from' : from, 'to' : to , 'method'  : method};
   this.sendCommand("do_the_work", user_options);
-  
-  this.save_settings();
 }
 
 PopupView.prototype.checkAll = function() {
-  this.doAction(Action.ACTION_CHECK);
+  this.doAction(ButtonAction.ACTION_CHECK);
 }
 
 PopupView.prototype.uncheckAll = function() {
-  this.doAction(Action.ACTION_UNCHECK);
+  this.doAction(ButtonAction.ACTION_UNCHECK);
 }
 
 PopupView.prototype.invert = function() {
-  this.doAction(Action.ACTION_INVERT);
+  this.doAction(ButtonAction.ACTION_INVERT);
 }
 
-PopupView.prototype.save_settings = function() {
-  var input_types = 0;
-  if (this.chkCheckbox.checked) {
-	  input_types |= TypeSelected.TYPE_CHECKBOX;
-  }
-  if (this.chkRadio.checked) {
-	  input_types |= TypeSelected.TYPE_RADIO;
-  }
-  
+PopupView.prototype.save_settings = function() 
+{
+  var input_types = this.get_ui_input_types();
   var config = {
     'input_types': input_types,
     'step': this.txtStep.valueAsNumber,
 	'from': this.txtFrom.valueAsNumber,
 	'to': this.txtTo.valueAsNumber,
+	'method': this.cboMethod.value,
   };
 
   chrome.storage.sync.set(config, function() {
@@ -137,15 +154,15 @@ PopupView.prototype.load_settings = function() {
     'step': 1,
 	'from': 1,
 	'to': 99999,
+	'method' : 1,
   }, function(items) {
     //console.log(items);
-	if (items.input_types && TypeSelected.TYPE_CHECKBOX)
-		_this.chkCheckbox.checked = true;
-	if (items.input_types && TypeSelected.TYPE_RADIO)
-		_this.chkRadio.checked = true;
+	_this.chkCheckbox.checked = items.input_types & TypeSelected.TYPE_CHECKBOX;
+	_this.chkRadio.checked = items.input_types & TypeSelected.TYPE_RADIO;
     _this.txtStep.value = items.step;
 	_this.txtFrom.value = items.from;
 	_this.txtTo.value = items.to;
+	_this.cboMethod.value = items.method;
   });
 }
 
@@ -154,12 +171,14 @@ var popupView = 0;
 document.addEventListener('DOMContentLoaded', function() {
   if (!popupView) {
 	  popupView = new PopupView();
-	  popupView.load_settings();
   }
+  
+  popupView.load_settings();
   
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 	  var tab = tabs[0];
 	  if (tab) {
+		if (tab.url && tab.url.startsWith('chrome://')) return 0;
 		chrome.scripting.executeScript({target: {tabId: tab.id, allFrames : true},files: ['content_script.js']});
 	  }
   });

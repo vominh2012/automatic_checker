@@ -1,1 +1,1 @@
-"C:\Program Files\Google\Chrome\Application\chrome.exe" --pack-extension=AutomaticChecker --pack-extension-key=key.pem
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --pack-extension=C:\sources\AutomaticCheker\AutomaticChecker --pack-extension-key=C:\sources\AutomaticCheker\key.pem

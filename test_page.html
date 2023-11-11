@@ -1,0 +1,51 @@
+<head>
+<script> 
+['click','mouseover', 'keypress'].forEach(ev => {
+    window.addEventListener(ev, () => {
+        console.log('event:', ev)
+    })
+})
+</script>
+</head>
+
+<h1>Custom Radio Buttons</h1>
+<label class="container">One
+  <input type="radio" checked="checked" name="radio">
+  <span class="checkmark"></span>
+</label>
+<label class="container">Two
+  <input type="radio" name="radio">
+  <span class="checkmark"></span>
+</label>
+<label class="container">Three
+  <input type="radio" name="radio">
+  <span class="checkmark"></span>
+</label>
+<label class="container">Four
+  <input type="radio" name="radio">
+  <span class="checkmark"></span>
+</label>
+
+<h1>Custom Checkbox Buttons</h1>
+<label class="container">One
+  <input type="checkbox" checked="checked">
+  <span class="checkmark"></span>
+</label>
+
+<label class="container">Two
+  <input type="checkbox">
+  <span class="checkmark"></span>
+</label>
+
+<label class="container">Three
+  <input type="checkbox">
+  <span class="checkmark"></span>
+</label>
+
+<label class="container">Four
+  <input type="checkbox">
+  <span class="checkmark"></span>
+</label>
+
+<br/>
+<iframe src="iframe.html" title="W3Schools Free Online Web Tutorials"></iframe>

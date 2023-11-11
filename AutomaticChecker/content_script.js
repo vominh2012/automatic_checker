@@ -1,34 +1,11 @@
 // protect inject many times
-if (!document.isInjectedCheckAllContentScript_V10_E2F5121A_4644_4A18_AB23_41BFAF8D205F)
+if (!document.isInjectedCheckAllContentScript_V11_E2F5121A_4644_4A18_AB23_41BFAF8D205F)
 {
-	document.isInjectedCheckAllContentScript_V10_E2F5121A_4644_4A18_AB23_41BFAF8D205F = true;
-
-	chrome.runtime.onMessage.addListener(function(req, sender, callback) {
-		if ('command' in req) {
-			var handler = messageHandlers[req.command]
-			if (handler) {
-				handler(req.user_options);
-			}
-		}
-	});
+	document.isInjectedCheckAllContentScript_V11_E2F5121A_4644_4A18_AB23_41BFAF8D205F = true;
 
 	var checker = {};
 
-	/*function isIframeAccessable(iframe)
-	{
-	    var key = ( +new Date ) + "" + Math.random();
-	    try {
-	        var global = iframe.contentWindow;
-	        global[key] = "1";
-	        return global[key] == "1";
-	    }
-	    catch( e ) {
-	        return false;
-	    }
-	}
-	*/
-
-	const TYPE_SELECTED = {
+	const TypeSelected = {
 		TYPE_CHECKBOX : 1,
 		TYPE_RADIO : 2
 	}
@@ -39,18 +16,52 @@ if (!document.isInjectedCheckAllContentScript_V10_E2F5121A_4644_4A18_AB23_41BFAF
 		ACTION_INVERT : 4
 	}
 	
+	const Method = {
+		SET : 1,
+		CLICK: 2,
+		CLICK_EVENT: 4,
+		MOUSE_OVER_CLICK: 8,
+	}
+	
+	function event_fire(doc, el, etype) {
+		var event_obj = new MouseEvent(etype, {bubbles: true, cancelable: true,});
+		return el.dispatchEvent(event_obj);
+	}
+
+	function event_mouse_click(doc, el, is_mouse_over=false) {
+		if (is_mouse_over) {
+			event_fire(doc, el, 'mouseover');
+		}
+		event_fire(doc, el, 'click');
+	}
+	function interact_method(doc, el, method, val = false) {
+		if (method == Method.SET) 
+		{
+			el.checked = val;
+		}
+		else if (method == Method.CLICK)
+		{
+			el.click();
+		} 
+		else if (method == Method.CLICK_EVENT || method == Method.MOUSE_OVER_CLICK)
+		{
+			var need_mouse_over =  (method == Method.MOUSE_OVER_CLICK);
+			setTimeout(event_mouse_click(doc, el, need_mouse_over));
+		}
+	}
+	
 	checker.setControl = function(doc, user_options)
 	{
 		var need_invert = (user_options.action == Action.ACTION_INVERT);
-		var check_value = (user_options.action == Action.ACTION_CHECK);;
+		var need_check = (user_options.action == Action.ACTION_CHECK);;
 		
 		var query_string = "";
-		if (user_options.input_types && TYPE_SELECTED.TYPE_CHECKBOX)
+		if (user_options.input_types && TypeSelected.TYPE_CHECKBOX)
 		{
 			query_string += "input[type=checkbox],";
 		}
 		
-		if (user_options.input_types && TYPE_SELECTED.TYPE_RADIO)
+		if (user_options.input_types && TypeSelected.TYPE_RADIO)
 		{
 			query_string += "input[type=radio],";
 		}
@@ -60,24 +71,41 @@ if (!document.isInjectedCheckAllContentScript_V10_E2F5121A_4644_4A18_AB23_41BFAF
 		}
 
 		var controls = doc.querySelectorAll(query_string);
-		for (var i = user_options.from - 1; i < controls.length && i < user_options.to; i+= user_options.step) {
+		
+		var limit = controls.length;
+		if (user_options.to > 0) {
+			limit = Math.min(limit, user_options.to);
+		} else {
+			limit += user_options.to;
+		}
+		
+		// ui offset start from 1
+		var start_offset = user_options.from - 1;
+		if (start_offset < 0)
+			start_offset = controls.length + start_offset;
+
+		for (var i = start_offset; i < limit; i+= user_options.step) {
 			var item = controls[i];
 			var checked = item.checked;
-			if (need_invert)
-		    	item.checked = !checked;
-		    else if (checked != check_value)
-		    	item.checked =  check_value;
+			var new_val = checked;
+			if (need_invert) 
+			{
+				new_val = !checked;
+			} 
+			else if (need_check)
+			{
+				new_val = true;
+			}
+			else 
+			{
+				new_val = false;
+			}
+			
+			if (checked != new_val) 
+			{
+				interact_method(doc, item, user_options.method, new_val);
+			}
 		}
-
-		// allFrames : true 
-		// handle child iframe 
-		/*var iframes = doc.querySelectorAll("iframe");
-		for (i = 0; i < iframes.length; ++i) {
-			if (!isIframeAccessable(iframes[i]))
-				continue;
-			var iframeDoc = iframes[i].contentWindow.document;
-			checker.setControl(iframeDoc, queryString, selectType, step);
-		} */
 	}
 	checker.do_the_work = function(user_options)
 	{
@@ -87,4 +115,14 @@ if (!document.isInjectedCheckAllContentScript_V10_E2F5121A_4644_4A18_AB23_41BFAF
 	var messageHandlers = {
 		"do_the_work" : checker.do_the_work,
 	};
+	
+	chrome.runtime.onMessage.addListener(function(req, sender, callback) {
+		if ('command' in req) {
+			var handler = messageHandlers[req.command]
+			if (handler) {
+				handler(req.user_options);
+			}
+		}
+	});
+
 }
