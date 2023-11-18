@@ -179,7 +179,15 @@ document.addEventListener('DOMContentLoaded', function() {
 	  var tab = tabs[0];
 	  if (tab) {
 		if (tab.url && tab.url.startsWith('chrome://')) return 0;
-		chrome.scripting.executeScript({target: {tabId: tab.id, allFrames : true},files: ['content_script.js']});
+		//chrome.scripting.executeScript({target: {tabId: tab.id, allFrames : true},files: ['content_script.js']});
+		
+		chrome.webNavigation.getAllFrames({
+		  tabId: tab.id
+		}, (frames) => {
+		    const frameIds = frames.map((f) => f.frameId);
+
+		  chrome.scripting.executeScript({target: { tabId: tab.id, frameIds: frameIds },files: ['content_script.js']});
+		});
 	  }
   });
 });

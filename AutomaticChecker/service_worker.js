@@ -43,9 +43,14 @@ chrome.commands.onCommand.addListener((command) => {
 	  chrome.tabs.query({active: true, lastFocusedWindow: true}, function(tabs) {
 		  var tab = tabs[0];
 		  if (tab) {
-			chrome.scripting.executeScript({target: {tabId: tab.id, allFrames : true},files: ['content_script.js']});
+			if (tab.url && tab.url.startsWith('chrome://')) return 0;
 			
-			do_the_work(command, tab.id);
+			chrome.webNavigation.getAllFrames({ tabId: tab.id }, (frames) => {
+				const frameIds = frames.map((f) => f.frameId);
+				chrome.scripting.executeScript({target: { tabId: tab.id, frameIds: frameIds },files: ['content_script.js']});
+				
+				do_the_work(command, tab.id);
+			});
 		  }
 	  });
   }

@@ -33,6 +33,11 @@
     "default_title": "Click to show!"
   },
   "permissions": [
-    "activeTab", "storage", "scripting"
+    "activeTab", "storage", "scripting", "webNavigation"
+  ],
+  "host_permissions":[
+    "https://*/*",
+    "http://*/*"
   ]
+  
 }
